@@ -1,6 +1,5 @@
 package dao
 
-
 import (
 	"database/sql"
 	"fmt"
@@ -8,7 +7,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"math/rand"
-	"reflect"
 	"time"
 )
 var (
@@ -73,37 +71,4 @@ func Insert(sqlStr string) int64 {
 	LastInsertId, err := res.LastInsertId()
 	t.Commit()
 	return LastInsertId
-}
-func getInsert(q interface{}) {
-	if reflect.ValueOf(q).Kind() == reflect.Struct {
-		t := reflect.TypeOf(q).Name()
-		query := fmt.Sprintf("insert into %s  values(", t)
-		v := reflect.ValueOf(q)
-
-		for i := 0; i < v.NumField(); i++ {
-			fmt.Println(v.Index(i))
-			switch v.Field(i).Kind() {
-			case reflect.Int:
-				if i == 0 {
-					query = fmt.Sprintf("%s%d", query, v.Field(i).Int())
-				} else {
-					query = fmt.Sprintf("%s, %d", query, v.Field(i).Int())
-				}
-			case reflect.String:
-				if i == 0 {
-					query = fmt.Sprintf("%s\"%s\"", query, v.Field(i).String())
-				} else {
-					query = fmt.Sprintf("%s, \"%s\"", query, v.Field(i).String())
-				}
-			default:
-				fmt.Println("Unsupported type")
-				return
-			}
-		}
-		query = fmt.Sprintf("%s)", query)
-		fmt.Println(query)
-		return
-
-	}
-	fmt.Println("unsupported type")
 }

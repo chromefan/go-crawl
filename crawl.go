@@ -12,10 +12,7 @@ var tokens = make(chan struct{}, 10)
 
 func crawl(url string) []string {
 	fmt.Println(url)
-	//tokens <- struct{}{}
-
 	list, err := links.ExtractList(url)
-	//<- tokens
 	if err != nil {
 		log.Print(err)
 	}
@@ -52,7 +49,7 @@ func main() {
 		worklist <- foundLinks
 		close(worklist)
 	}()
-	//go dao.SaveLog(worklist, unseenLinks)
+	go dao.SaveLog(worklist, unseenLinks)
 	go crawArticle(worklist,articlelist)
 	go dao.SaveArticle(articlelist, unseenLinks)
 	<-unseenLinks
