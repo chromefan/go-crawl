@@ -1,16 +1,9 @@
-// Copyright © 2016 Alan A. A. Donovan & Brian W. Kernighan.
-// License: https://creativecommons.org/licenses/by-nc-sa/4.0/
-
-// See page 138.
-//!+Extract
-
-// Package links provides a link-extraction function.
 package links
 
 import (
 	"fmt"
-	"golang.org/x/net/html"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -18,7 +11,8 @@ import (
 
 var pattern = map[string]string{
 	"content_url":       `<span><a href="(.+?)" target="_blank">.+?</a>.+?</span>`,
-	"category_url":      `<a href=\".[^\"]+?\">.+?</a>`,
+	"category_url":      `<div class="cont">\s<a([\s\S]+?)"abcd">`,
+	"category_text":      `href="(.+?)">([^>]+?)</a>`,
 	"article_html":      `>(.+?)</h1>([\s\S]+?)</div>`,
 	"article_title":     ">(.+?)</h1>",
 	"article_content":   `id="contson[\d\w]+">([\s\S]+?)$`,
@@ -28,8 +22,30 @@ var pattern = map[string]string{
 	"article_info":      `>([^<>：].+?)`,
 }
 
-// Extract makes an HTTP GET request to the specified URL, parses
-// the response as HTML, and returns the links in the HTML document.
+func ExtractCategory(url string) (map[string][]string, error) {
+	baseUrl := getHost(url)
+	doc, err := getHtml(url)
+	if err != nil {
+		log.Print(err)
+	}
+	category :=make(map[string][]string)
+	var categoryHtml string
+	reg := regexp.MustCompile(pattern["category_url"])
+	result := reg.FindAllStringSubmatch(doc, -1)
+
+	for _, text := range result {
+		categoryHtml = text[1]
+		break
+	}
+	reg = regexp.MustCompile(pattern["category_text"])
+	result = reg.FindAllStringSubmatch(categoryHtml, -1)
+	for _, text := range result {
+		category["url"] = append(category["url"],baseUrl+text[1])
+		category["name"] = append(category["name"],text[2])
+	}
+	fmt.Println(category)
+	return category, err
+}
 func ExtractList(url string) ([]string, error) {
 	baseUrl := getHost(url)
 	doc, err := getHtml(url)
@@ -119,19 +135,4 @@ func getHost(urlText string) string {
 	}
 	baseUrl := u.Scheme + "://" + u.Host
 	return baseUrl
-}
-
-//!-Extract
-
-// Copied from gopl.io/ch5/outline2.
-func forEachNode(n *html.Node, pre, post func(n *html.Node)) {
-	if pre != nil {
-		pre(n)
-	}
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		forEachNode(c, pre, post)
-	}
-	if post != nil {
-		post(n)
-	}
 }

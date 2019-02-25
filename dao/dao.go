@@ -9,20 +9,20 @@ import (
 	"math/rand"
 	"time"
 )
-var (
-	db     = &sql.DB{}
 
+var (
+	db = &sql.DB{}
 )
 
-func Start(){
-	c , err := fconf.NewFileConf(".env")
+func Start() {
+	c, err := fconf.NewFileConf(".env")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	dbHost := c.String("mysql.dbHost")
 	dbUser := c.String("mysql.dbUser")
-	dbPass :=  c.String("mysql.dbPass")
+	dbPass := c.String("mysql.dbPass")
 	dbName := c.String("mysql.dbName")
 
 	db, _ = sql.Open("mysql", dbUser+":"+dbPass+"@tcp("+dbHost+")/"+dbName)
@@ -44,7 +44,7 @@ func FindAll(sqlStr string) {
 	for rows.Next() {
 		//将行数据保存到record字典
 		err := rows.Scan(scanArgs...)
-		if err !=nil{
+		if err != nil {
 			log.Fatal(err)
 		}
 		record := make(map[string]string)
@@ -65,7 +65,7 @@ func random() int {
 func Insert(sqlStr string) int64 {
 	t, _ := db.Begin()
 	res, err := t.Exec(sqlStr, sqlStr)
-	if err !=nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 	LastInsertId, err := res.LastInsertId()
