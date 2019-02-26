@@ -10,7 +10,7 @@ import (
 )
 
 var pattern = map[string]string{
-	"content_url":       `<span><a href="(.+?)" target="_blank">.+?</a>.+?</span>`,
+	"content_url":       `span><a href="(.+?)" target="_blank">[\s\S]+?</span>`,
 	"category_url":      `<div class="cont">\s<a([\s\S]+?)"abcd">`,
 	"category_text":      `href="(.+?)">([^>]+?)</a>`,
 	"article_html":      `>(.+?)</h1>([\s\S]+?)</div>`,
@@ -18,8 +18,8 @@ var pattern = map[string]string{
 	"article_content":   `id="contson[\d\w]+">([\s\S]+?)$`,
 	"article_tags_list": `<div class="tag">([\s\S]+?)</div>`,
 	"article_tags":      `>([^><]+?)</a>`,
-	"article_info_html": `<p class="source">([\s\S.]+?)</a>\s</p>`,
-	"article_info":      `>([^<>：].+?)`,
+	"article_info_html": `(<p class="source">[\s\S.]+?</a>\s</p>)`,
+	"article_info":      `>([^<>：].+?)<`,
 }
 
 func ExtractCategory(url string) (map[string][]string, error) {
@@ -39,7 +39,10 @@ func ExtractCategory(url string) (map[string][]string, error) {
 	}
 	reg = regexp.MustCompile(pattern["category_text"])
 	result = reg.FindAllStringSubmatch(categoryHtml, -1)
-	for _, text := range result {
+	for index, text := range result {
+		if index < 73{
+			continue
+		}
 		category["url"] = append(category["url"],baseUrl+text[1])
 		category["name"] = append(category["name"],text[2])
 	}
@@ -47,13 +50,13 @@ func ExtractCategory(url string) (map[string][]string, error) {
 	return category, err
 }
 func ExtractList(url string) ([]string, error) {
-	baseUrl := getHost(url)
+	//baseUrl := getHost(url)
 	doc, err := getHtml(url)
 	var links []string
 	reg := regexp.MustCompile(pattern["content_url"])
 	result := reg.FindAllStringSubmatch(doc, -1)
 	for _, text := range result {
-		links = append(links, baseUrl+text[1])
+		links = append(links, text[1])
 	}
 	return links, err
 }

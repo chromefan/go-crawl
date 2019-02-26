@@ -24,19 +24,19 @@ func crawl(url string) []string {
 	return list
 }
 func crawCategory(baseUrl string, worklist chan []string) {
-	var categorylist = make(chan map[string][]string,1)
+	//var categorylist = make(chan map[string][]string,1)
 	category, _ := links.ExtractCategory(baseUrl)
-	/*for _, cateUrl := range category["url"] {
+	for _, cateUrl := range category["url"] {
 		foundLinks := crawl(cateUrl)
 		worklist <- foundLinks
-	}*/
+	}
 
-	go func() {
+	/*go func() {
 		categorylist <- category
 	}()
 	go dao.SaveCategory(categorylist)
 	//go func() { <-categorylist}()
-	close(worklist)
+	close(worklist)*/
 }
 func crawArticle(worklist chan []string, articlelist chan map[string]string) {
 	num := 0
@@ -65,20 +65,22 @@ func crawArticle(worklist chan []string, articlelist chan map[string]string) {
 func main() {
 
 	var worklist = make(chan []string, 20)
-	//var articlelist = make(chan map[string]string,10)
+	var articlelist = make(chan map[string]string,10)
 
-	//var endChan = make(chan bool)
+	var endChan = make(chan bool)
 
 	baseUrl := os.Args[1]
 
-	crawCategory(baseUrl, worklist)
+	go crawCategory(baseUrl, worklist)
 	//go dao.SaveLog(worklist, unseenLinks)
-	//go crawArticle(worklist, articlelist)
-	//go dao.SaveArticle(articlelist, endChan)
+	go crawArticle(worklist, articlelist)
+	go dao.SaveArticle(articlelist, endChan)
 
-	fmt.Println("\n—-----—done—-----—")
-
-
+	select {
+	case <-endChan:
+		fmt.Println("\n—-----—done—-----—")
+		return
+	}
 }
 func tracefile(str_content string) {
 	fd, _ := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)

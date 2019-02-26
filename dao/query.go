@@ -17,7 +17,7 @@ func SaveCategory(categorylist chan map[string][]string) {
 
 			sqlStr := fmt.Sprintf("insert into category(url,name) values(?,?)")
 			fmt.Println(sqlStr, cateUrl, cate["name"][i])
-			res, err := t.Exec(sqlStr,cateUrl, cate["name"][i])
+			res, err := t.Exec(sqlStr, cateUrl, cate["name"][i])
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -50,21 +50,21 @@ func SaveArticle(articlelist chan map[string]string, endChan chan bool) {
 	Start()
 	t, _ := db.Begin()
 	num := 0
-	urlmap := make(map[string]bool)
+
 	for article := range articlelist {
 		num++
 		tokens <- struct{}{}
-		if urlmap[article["url"]] {
-			continue
-		}
+		//var urlmap = make(chan bool)
+
 		urlNum := findArticleNum(article["url"])
 		if urlNum > 0 {
-			fmt.Println(article["url"],urlNum)
+			fmt.Println("repeat",urlNum)
 			continue
+			//urlmap <- true
 		}
 		sqlStr := fmt.Sprintf("insert into article(title,content,author,tags,dynasty,url) ")
 		sqlStr += fmt.Sprintf(" values(?,?,?,?,?,?)")
-		res, err := t.Exec(sqlStr, article["title"], article["content"], article["author"], strings.Trim(article["tags"], ","),
+		res, err := t.Exec(sqlStr, article["title"], strings.Trim(article["content"], ""), article["author"], strings.Trim(article["tags"], ","),
 			article["dynasty"], article["url"])
 		if err != nil {
 			fmt.Println(article)
@@ -72,8 +72,8 @@ func SaveArticle(articlelist chan map[string]string, endChan chan bool) {
 		}
 		LastInsertId, err := res.LastInsertId()
 		fmt.Printf(" \n Article LastInsertId: %d \n", LastInsertId)
-		urlmap[article["url"]] = true
-		<- tokens
+		//urlmap[article["url"]] = true
+		<-tokens
 		if (num % 100) == 0 {
 			t.Commit()
 			t, _ = db.Begin()
@@ -84,8 +84,8 @@ func SaveArticle(articlelist chan map[string]string, endChan chan bool) {
 
 func findArticleNum(url string) int64 {
 	var count int64
-	err := db.QueryRow("select count(id) from article where url=$1",url).Scan(&count)
-	if err != nil{
+	err := db.QueryRow("select count(*) from article where url = ?", url).Scan(&count)
+	if err != nil {
 		return 0
 	}
 	return count
